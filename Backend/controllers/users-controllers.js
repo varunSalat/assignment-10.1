@@ -1,52 +1,52 @@
-const { validationResult } = require('express-validator');
+const { validationResult } = require("express-validator");
 
-const User = require('../models/user');
+const User = require("../models/user");
 
 const getUsers = async (req, res, next) => {
   let users;
   try {
-    users = await User.find({}, '-password');
+    users = await User.find({}, "-password");
   } catch (err) {
-    return res.status(500).json( { message: 'Fetching places has failed, please try again later'  });
+    return res
+      .status(500)
+      .json({ message: "Fetching places has failed, please try again later" });
   }
-  res.json({ users: users.map(user => user.toObject({ getters: true })) });
+  res.json({ users: users.map((user) => user.toObject({ getters: true })) });
 };
 
-
 const signup = async (req, res, next) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     return res.status(422).json( { message: 'Invalid inputs please try again'  });
-//   }
-  const { name, email, password, places } = req.body;
+  const { name, email, password } = req.body;
 
+  // Check if user already exists
   let existingUser;
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    return res.status(500).json( { message: 'Signup failed, please try again later'  });
+    return res
+      .status(500)
+      .json({ message: "Signup failed, please try again later" });
   }
 
   if (existingUser) {
-    return res.status(422).json( { message: 'User already exists'  });
+    return res.status(422).json({ message: "User already exists" });
   }
 
-  //STEP 1: lets add the image that is uploaded when creating (registering) a new User
+  // Assuming req.file.path contains the path to the uploaded image
+  const imagePath = req.file.path;
+
   const createdUser = new User({
     name,
     email,
-    image: req.file.path,  // 'http://elvis.rowan.edu/~burnse/assets/profs-logo.png',
-    password, 
-    places
+    password,
+    image: imagePath, // Store the image path in your user document
   });
 
   try {
     await createdUser.save();
+    res.status(201).json({ user: createdUser.toObject({ getters: true }) });
   } catch (err) {
-    return res.status(500).json( { message:  err.message  });
+    return res.status(500).json({ message: err.message });
   }
-
-  res.status(201).json({ user: createdUser.toObject({ getters: true }) }); // createdUser includes the PW
 };
 
 const login = async (req, res, next) => {
@@ -57,14 +57,14 @@ const login = async (req, res, next) => {
   try {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
-    return res.status(500).json( { message: 'Login failed'  });
+    return res.status(500).json({ message: "Login failed" });
   }
 
   if (!existingUser || existingUser.password !== password) {
-    return res.status(422).json( { message: 'Invalid credentials'  });
+    return res.status(422).json({ message: "Invalid credentials" });
   }
 
-  res.json({ message: 'Logged in!' });
+  res.json({ message: "Logged in!" });
 };
 
 exports.getUsers = getUsers;
